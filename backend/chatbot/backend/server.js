@@ -1,12 +1,21 @@
 require("dotenv").config();
 const app = require("./src/app")
-
+const cors = require("cors");
+app.use(cors());
 const { createServer } = require("http");
 const { Server } = require("socket.io");
-const generateResponse = require("./src/service/ai.service")
+const generateResponse = require("./src/service/ai.service");
+const { text } = require("stream/consumers");
 
 const httpServer = createServer(app);
-const io = new Server(httpServer, { /* options */ });
+const io = new Server(httpServer, {
+  cors: {
+    origin: "http://localhost:5173", // your frontend origin
+    methods: ["GET", "POST"],
+    credentials: true
+  }
+});
+const chat= [];
 
 io.on("connection", (socket) => {
   console.log("Connection established");
@@ -15,9 +24,18 @@ io.on("connection", (socket) => {
   })
 
   socket.on("message",async(data)=>{   //custom event
-    const response = await generateResponse(data.prompt);
-    console.log({"ai-response":response});
+    chat.push({
+      role:"user",
+      parts:[{text:data}]
+    });
+    const response = await generateResponse(chat);
+    chat.push({
+      role:"model",
+      parts:[{text:response}]
+    })
     socket.emit("ai-response",{response});
+    console.log(chat);
+    
   })
 });
 

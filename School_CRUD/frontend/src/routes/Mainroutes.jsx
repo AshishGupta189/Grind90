@@ -4,6 +4,7 @@ import ClassesPage from "../pages/ClassesPage";
 import StudentsPage from "../pages/StudentsPage";
 const Mainroutes = () => {
     return (<Routes>
+        <Route path="/" element={<StudentsPage />} />
         <Route path="/teachers" element={<TeachersPage />} />
         <Route path="/classes" element={<ClassesPage />} />
         <Route path="/students" element={<StudentsPage />} />

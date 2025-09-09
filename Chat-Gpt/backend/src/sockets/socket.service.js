@@ -5,6 +5,7 @@ const userModel = require("../models/user.model");
 const aiService = require("../services/ai.service");
 const messageModel = require("../models/message.model");
 const { createMemory , queryMemory } = require('../services/vector.service');
+const { text } = require("express");
 
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {
@@ -13,12 +14,18 @@ function initSocketServer(httpServer) {
 
   io.on("connection", (socket) => {
     socket.on("message", async (data) => {
-      await messageModel.create({
+      const message=await messageModel.create({
         chat: data.chat,
         user: socket.user._id,
         content: data.content,
         role: "user",
       });
+      
+      const vector = await aiService.generateVector(data.content);
+      // console.log(vector);
+      
+      await createMemory({id:message._id,vector, metadata: {user: socket.user._id, chat: data.chat,text:message.content}});
+      
       const chatHistory = (
         await messageModel
           .find({ chat: data.chat })
@@ -34,12 +41,15 @@ function initSocketServer(httpServer) {
           };
         })
       );
-      await messageModel.create({
+      const responseMessage = await messageModel.create({
         chat: data.chat,
         user: socket.user._id,
         content: response,
         role: "model",
       });
+
+      const responseVector = await aiService.generateVector(response);
+      await createMemory({id:responseMessage._id,vector:responseVector, metadata: {user: socket.user._id, chat: data.chat,text:responseMessage.content}});
       socket.emit("response", {
         chat: data.chat,
         content: response,

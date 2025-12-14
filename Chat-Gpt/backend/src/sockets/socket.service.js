@@ -5,11 +5,14 @@ const userModel = require("../models/user.model");
 const aiService = require("../services/ai.service");
 const messageModel = require("../models/message.model");
 const { createMemory, queryMemory } = require("../services/vector.service");
-const { text } = require("express");
 
 function initSocketServer(httpServer) {
   const io = new Server(httpServer, {
-    /* options */
+    cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+    methods: ["GET", "POST"]
+  }
   });
 
   io.on("connection", (socket) => {
